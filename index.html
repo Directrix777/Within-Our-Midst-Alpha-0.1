@@ -1,0 +1,76 @@
+<html>
+<head>
+  <title>Publish Subscribe Tutorial</title>
+</head>
+
+<body>
+<input id="message" type="text">
+<input id="publish-button" type="submit" value="Click here to Publish"/>
+</body>
+
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.21.7.min.js"></script>
+<script>
+
+  const uuid = PubNub.generateUUID();
+  const pubnub = new PubNub({
+    publishKey: "pub-c-e84e4724-e3d9-4461-910a-d94107fb9bfe",
+    subscribeKey: "sub-c-3331d474-12e9-11eb-bc34-ce6fd967af95",
+    uuid: uuid
+  });
+
+  const button = document.getElementById('publish-button');
+  let messageField = document.getElementById('message')
+
+  button.addEventListener('click', () => {
+    pubnub.publish({
+      channel : "pubnub_onboarding_channel",
+      message : {"sender": uuid, "content": messageField.value}
+    }, function(status, response) {
+      //Handle error here
+    });
+  });
+
+  pubnub.subscribe({
+    channels: ['pubnub_onboarding_channel'],
+    withPresence: true
+  });
+
+  pubnub.addListener({
+    message: function(event) {
+      let pElement = document.createElement('p');
+      pElement.appendChild(document.createTextNode(event.message.content));
+      document.body.appendChild(pElement);
+    },
+    presence: function(event) {
+      let pElement = document.createElement('p');
+      pElement.appendChild(document.createTextNode(event.uuid + " has joined. That's you!"));
+      document.body.appendChild(pElement);
+    }
+  });
+
+  pubnub.history(
+    {
+      channel: 'pubnub_onboarding_channel',
+      count: 10,
+      stringifiedTimeToken: true,
+    },
+    function (status, response) {
+      let pElement = document.createElement('h3');
+      pElement.appendChild(document.createTextNode('historical messages'));
+      document.body.appendChild(pElement);
+
+      pElement = document.createElement('ul');
+      let msgs = response.messages;
+      for (let i in msgs) {
+        msg = msgs[i];
+        let pElement = document.createElement('li');
+        let chat = document.querySelector('div#chat')
+        pElement.appendChild(document.createTextNode('sender: ' + msg.entry.sender + ', content: ' + msg.entry.content));
+        chat.appendChild(pElement);
+      }
+    }
+  );
+
+</script>
+<script src= "index.js"></script>
+</html>
